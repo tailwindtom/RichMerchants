@@ -1,0 +1,12 @@
+# UE4SS / game runtime artifacts (never commit these)
+UE4SS.log
+*.log
+UE4SS_ObjectDump.txt
+*.usmap
+
+# OS / editor cruft
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
