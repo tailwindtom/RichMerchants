@@ -216,9 +216,11 @@ though runtime introspection was enough here.
   three or already hold more than the target.
 - Stock is re-applied on each load / chapter change. Within a very long single session,
   the game's internal restocking is re-covered the next time you load.
-- "Ore" in `m_Items` is the merchant's tradeable ore (and money pool). If you ever observe
-  that a boosted trader still won't *buy* more from you, his spending purse may be tracked
-  separately (`GetCharacterOre`) — a candidate for a future version.
+- **Confirmed in-game:** the ore in `m_Items` *is* the merchant's spending money — a
+  boosted trader buys more from you before running out (verified: a trader holding
+  452 ore purchased a full 452 ore worth of goods). So all three resources are genuinely
+  covered: ore = buying power (the buyer side), arrows & bolts = sellable stock (the
+  seller side).
 
 ## Building & contributing
 
