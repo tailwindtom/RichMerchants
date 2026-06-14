@@ -168,8 +168,12 @@ local function apply_all(reason, verbose)
         local c = boost_config(cfg, read_name(cfg, "m_UniqueName"), verbose)
         if c > 0 then traders = traders + 1; total = total + c end
     end
-    log.info(string.format("applied (%s): %d/%d trader(s) raised, %d stack(s) changed [ore x%.1f arrow x%.1f bolt x%.1f]",
-        tostring(reason), traders, #list, total, ITEM_MULT.ItMi_Orenugget, ITEM_MULT.ItAm_Arrow, ITEM_MULT.ItAm_Bolt))
+    -- Only log when something actually changed (or when verbose). The frequent
+    -- "0/31 raised" no-op level-loads otherwise flood UE4SS.log → frame stutter.
+    if traders > 0 or verbose then
+        log.info(string.format("applied (%s): %d/%d trader(s) raised, %d stack(s) changed [ore x%.1f arrow x%.1f bolt x%.1f]",
+            tostring(reason), traders, #list, total, ITEM_MULT.ItMi_Orenugget, ITEM_MULT.ItAm_Arrow, ITEM_MULT.ItAm_Bolt))
+    end
 end
 
 -- Print current ore/arrow/bolt of every trader that has any (diagnostics).
@@ -199,14 +203,17 @@ log.info(string.format("ore x%.2f, arrows x%.2f, bolts x%.2f, OnlyRaise=%s",
 
 -- Apply a few seconds after each spawn / level load. ClientRestart also re-fires
 -- on level travel / chapter changes (when the game restocks traders), so the boost
--- is re-asserted then. Debounced so overlapping fires don't queue many applies.
-local apply_pending = false
+-- is re-asserted then. But this hook fires *constantly* during open-world streaming
+-- (moving, dismounting, crossing zones); re-iterating every trader each time caused
+-- frame stutter. So: debounce + a cooldown → at most one apply per ~34s, which still
+-- catches a real restock soon enough without hitching on every streaming event.
+local apply_busy = false
 pcall(RegisterHook, "/Script/Engine.PlayerController:ClientRestart", function()
-    if apply_pending then return end
-    apply_pending = true
+    if apply_busy then return end
+    apply_busy = true
     run_later(4000, function()
-        apply_pending = false
         apply_all("level-load", config.Verbose == true)
+        run_later(30000, function() apply_busy = false end)   -- 30s cooldown before another re-apply
     end)
 end)
 

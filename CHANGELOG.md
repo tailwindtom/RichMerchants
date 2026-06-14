@@ -3,6 +3,16 @@
 All notable changes to **Rich Merchants** are documented here.
 Mod page: https://www.nexusmods.com/gothic1remake/mods/161
 
+## [1.0.1] — 2026-06-14
+
+### Fixed
+- **Stutter during open-world traversal.** The boost re-applied on every PlayerController
+  `ClientRestart`, which fires constantly while streaming the open world (moving,
+  dismounting, crossing zones) — re-iterating every trader each time and logging it. Now the
+  re-apply has a **cooldown** (at most one per ~34s) and only **logs when stock actually
+  changed**. The boost still re-asserts after a real restock, just without the per-event
+  frame hitch.
+
 ## [1.0.0] — 2026-06-12
 
 First public release.
