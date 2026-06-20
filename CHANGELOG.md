@@ -3,6 +3,18 @@
 All notable changes to **Rich Merchants** are documented here.
 Mod page: https://www.nexusmods.com/gothic1remake/mods/161
 
+## [1.0.2] — 2026-06-14
+
+### Fixed
+- **Trader stock could overflow to a negative amount** (e.g. "−1,100,000 ore"). When a trader
+  had an item with **no `m_DefaultItems` template entry**, the boost fell back to snapshotting
+  the *current* amount as the baseline — but that re-captured the already-boosted value on every
+  game launch and multiplied it again, so across many restarts it grew until it overflowed a
+  32-bit int into a negative number. The baseline is now taken **only** from `m_DefaultItems`
+  (which never changes → re-applying can never stack). Items without a template entry are left
+  untouched, and any value that already went **negative is healed** back to the clean
+  `default × multiplier` on the next apply.
+
 ## [1.0.1] — 2026-06-14
 
 ### Fixed

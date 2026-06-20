@@ -67,9 +67,6 @@ local ITEM_MULT = {
     ItAm_Bolt      = tonumber(config.BoltMultiplier) or 1.0,
 }
 local ONLY_RAISE = config.OnlyRaise ~= false -- default true
--- Session snapshot for configs that lack a default entry for an item.
-local fallback = _G.__RichMerchants_fallback or {}
-_G.__RichMerchants_fallback = fallback
 
 -- Get a TMap field, validated by ForEach (Num is unreliable on this build).
 local function get_map(obj, field)
@@ -126,16 +123,26 @@ local function boost_config(cfg, label, verbose)
     local changed = 0
     for _, h in ipairs(hits) do
         if h.mult ~= 1.0 then
-            -- Vanilla baseline: the default entry if present, else a one-time
-            -- snapshot of the current amount.
+            -- Vanilla baseline = the trader's restock template (m_DefaultItems). It never
+            -- changes, so target = base*mult is constant and re-applying can never stack.
+            -- (The old code fell back to snapshotting the CURRENT amount when no default
+            -- entry existed — but that re-captured the already-boosted value on every game
+            -- launch, multiplying by mult each session until it overflowed int32 into a
+            -- NEGATIVE number. That fallback is removed.)
             local base = default_amt[h.item]
-            if base == nil then
-                local fk = full_name(cfg) .. "|" .. h.item
-                if fallback[fk] == nil then fallback[fk] = h.cur end
-                base = fallback[fk]
+            local desired
+            if base ~= nil then
+                local target = math.floor(base * h.mult + 0.5)
+                if h.cur < 0 then
+                    desired = target                                  -- heal a corrupted/overflowed stack
+                else
+                    desired = ONLY_RAISE and math.max(h.cur, target) or target
+                end
+            elseif h.cur < 0 then
+                desired = 0                                           -- corrupted, no vanilla reference -> clear it
+            else
+                desired = h.cur                                       -- no template entry -> leave untouched (never snapshot -> never stacks)
             end
-            local target = math.floor(base * h.mult + 0.5)
-            local desired = ONLY_RAISE and math.max(h.cur, target) or target
             if desired ~= h.cur then
                 local ok = pcall(function() items:Add(h.key, desired) end)
                 if ok and read_item(items, h.item) == desired then changed = changed + 1 end

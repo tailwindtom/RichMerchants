@@ -11,7 +11,7 @@
 
 return {
     ModName = "Rich Merchants",
-    Version = "1.0.1",
+    Version = "1.0.2",
 
     -- ---- Stock multipliers (applied to the trader's vanilla amount) -----------
     OreMultiplier   = 3.0, -- ore  (ItMi_Orenugget — also the trader's buying money)
